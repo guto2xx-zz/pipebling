@@ -1,93 +1,51 @@
-'use strict'
+"use strict";
 
-/** @typedef {import('@adonisjs/framework/src/Request')} Request */
-/** @typedef {import('@adonisjs/framework/src/Response')} Response */
-/** @typedef {import('@adonisjs/framework/src/View')} View */
+const axios = require("axios");
+
+const Env = use("Env");
+
+const xml = require("../../../utils/xml");
 
 /**
  * Resourceful controller for interacting with orders
  */
 class OrderController {
   /**
-   * Show a list of all orders.
-   * GET orders
-   *
    * @param {object} ctx
    * @param {Request} ctx.request
    * @param {Response} ctx.response
-   * @param {View} ctx.view
    */
-  async index ({ request, response, view }) {
-  }
+  async commit({ params, request, response }) {
+    request.PipedriveDeals.data.map(async (val) => {
+      const retorno = xml.getXML(val);
 
-  /**
-   * Render a form to be used for creating a new order.
-   * GET orders/create
-   *
-   * @param {object} ctx
-   * @param {Request} ctx.request
-   * @param {Response} ctx.response
-   * @param {View} ctx.view
-   */
-  async create ({ request, response, view }) {
-  }
+      const apikey = Env.get("BLING_KEY");
 
-  /**
-   * Create/save a new order.
-   * POST orders
-   *
-   * @param {object} ctx
-   * @param {Request} ctx.request
-   * @param {Response} ctx.response
-   */
-  async store ({ request, response }) {
-  }
+      try {
+        const result = await axios.post(
+          `https://bling.com.br/Api/v2/pedido/json?apikey=${apikey}&xml=${retorno}`,
+          {},
+          {
+            headers: {
+              "Content-Type": "application/x-www-form-urlencoded",
+            },
+          }
+        );
 
-  /**
-   * Display a single order.
-   * GET orders/:id
-   *
-   * @param {object} ctx
-   * @param {Request} ctx.request
-   * @param {Response} ctx.response
-   * @param {View} ctx.view
-   */
-  async show ({ params, request, response, view }) {
-  }
+        const pvNumber = result.data.retorno.pedidos
+          ? result.data.retorno.pedidos[0].pedido.numero
+          : null;
 
-  /**
-   * Render a form to update an existing order.
-   * GET orders/:id/edit
-   *
-   * @param {object} ctx
-   * @param {Request} ctx.request
-   * @param {Response} ctx.response
-   * @param {View} ctx.view
-   */
-  async edit ({ params, request, response, view }) {
-  }
+        if (pvNumber) {
+          arrPedidos.push(pvNumber);
+        }
+      } catch (e) {
+        console.log(e);
+      }
+    });
 
-  /**
-   * Update order details.
-   * PUT or PATCH orders/:id
-   *
-   * @param {object} ctx
-   * @param {Request} ctx.request
-   * @param {Response} ctx.response
-   */
-  async update ({ params, request, response }) {
-  }
-
-  /**
-   * Delete a order with id.
-   * DELETE orders/:id
-   *
-   * @param {object} ctx
-   * @param {Request} ctx.request
-   * @param {Response} ctx.response
-   */
-  async destroy ({ params, request, response }) {
+    return { message: "Pedidos importados com sucesso!" };
   }
 }
 
-module.exports = OrderController
+module.exports = OrderController;
